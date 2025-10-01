@@ -1,6 +1,6 @@
 const helloRouteHandler = async (request, response) => {
   response.json({
-    name: "Blockchain Auditory API",
+    name: "Blockchain Audit API",
     status: "online",
     dateTime: new Date().toLocaleString(),
     ip: request.ip,
