@@ -1,8 +1,8 @@
-const unknownEndpoint = async (request, response) => {
-  response.status(404).json({
+const unknownEndpoint = async (req, res) => {
+  res.status(404).json({
     error: "Unknown endpoint",
-    message: `Route ${request.originalUrl} does not exist`,
-    method: request.method,
+    message: `Route ${req.originalUrl} does not exist`,
+    method: req.method,
     apiRoute: "/api",
   });
 };

@@ -14,9 +14,26 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  createdAt DateTime @default(now())
+enum DocumentType {
+  CPF
+  CNPJ
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+}
+
+model Donor {
+  id            Int          @id @default(autoincrement())
+  public_id     String       @unique
+  name          String
+  email         String       @unique
+  password      String
+  phone         String
+  document      String       @unique
+  document_type DocumentType
+  status        Status
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt()
 }

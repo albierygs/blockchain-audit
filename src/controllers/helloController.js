@@ -1,10 +1,12 @@
-const helloRouteHandler = async (request, response) => {
-  response.json({
+const helloRouteHandler = async (req, res) => {
+  res.json({
     name: "Blockchain Audit API",
     status: "online",
     dateTime: new Date().toLocaleString(),
-    ip: request.ip,
-    endpoints: {},
+    ip: req.ip,
+    endpoints: {
+      donors: "/api/donors",
+    },
   });
 };
 
