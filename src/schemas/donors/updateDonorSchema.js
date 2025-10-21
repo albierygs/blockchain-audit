@@ -21,7 +21,9 @@ const updateDonorSchema = z
     phone: z
       .string("invalid phone")
       .refine(
-        (value) => value.replace(/\s+/g, "").replace(/\D/g, "").length === 11,
+        (value) =>
+          value.replace(/\s+/g, "").replace(/\D/g, "").length === 11 ||
+          value.replace(/\s+/g, "").replace(/\D/g, "").length === 10,
         { error: "invalid phone" }
       )
       .optional(),
@@ -40,9 +42,4 @@ const updateDonorSchema = z
   })
   .strict();
 
-const validateReqBodyUpdateDonor = async (req, res, next) => {
-  req.body = updateDonorSchema.parse(req.body);
-  next();
-};
-
-module.exports = validateReqBodyUpdateDonor;
+module.exports = updateDonorSchema;

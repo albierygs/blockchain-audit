@@ -1,17 +1,15 @@
 const errorHandler = require("./errorHandlerMiddleware");
 const unknownEndpoint = require("./notFoundMiddleware");
-const validateParam = require("./paramValidatorMiddleware");
+const validateParamId = require("./paramIdValidatorMiddleware");
 const validateToken = require("./tokenValidatorMiddleware");
-const validateReqBodyCreateDonor = require("./validators/reqBodyCreateDonorValidator");
-const validateReqBodyLoginDonor = require("./validators/reqBodyLoginDonorValidator");
-const validateReqBodyUpdateDonor = require("./validators/reqBodyUpdateDonorValidator");
+const validateReqBody = require("./requestBodyValidatorMiddleware");
+const authorizeRoles = require("./authorizeRolesMiddleware");
 
 module.exports = {
   errorHandler,
   unknownEndpoint,
-  validateReqBodyCreateDonor,
-  validateReqBodyLoginDonor,
-  validateReqBodyUpdateDonor,
+  validateReqBody,
   validateToken,
-  validateParam,
+  validateParamId,
+  authorizeRoles,
 };

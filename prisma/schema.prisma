@@ -14,26 +14,240 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum DocumentType {
-  CPF
-  CNPJ
-}
-
 enum Status {
   ACTIVE
   INACTIVE
 }
 
-model Donor {
-  id            Int          @id @default(autoincrement())
-  public_id     String       @unique
-  name          String
-  email         String       @unique
-  password      String
-  phone         String
-  document      String       @unique
+enum PersonRole {
+  DONOR
+  ORG_MEMBER
+  ADMIN
+}
+
+model person {
+  id                  Int                  @id @default(autoincrement())
+  public_id           String               @unique @default(uuid())
+  name                String
+  email               String               @unique
+  password            String
+  phone               String
+  document            String               @unique
+  status              Status
+  role                PersonRole
+  created_at          DateTime             @default(now())
+  updated_at          DateTime             @updatedAt()
+  sessions            session[]
+  donor               donor?
+  organization_member organization_member?
+}
+
+enum DocumentType {
+  CPF
+  CNPJ
+}
+
+model donor {
+  public_id     String       @id @unique
+  person        person       @relation(fields: [public_id], references: [public_id], onDelete: Cascade, onUpdate: Cascade)
   document_type DocumentType
-  status        Status
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt()
+  donations     donation[]
+}
+
+enum MemberRole {
+  ORG_ADMIN
+  AUDITOR
+  VOLUNTEER
+}
+
+model organization_member {
+  public_id       String           @id @unique
+  person          person           @relation(fields: [public_id], references: [public_id], onDelete: Cascade, onUpdate: Cascade)
+  member_code     String?          @unique
+  role            MemberRole?
+  organization_id String?
+  organization    organization?    @relation(fields: [organization_id], references: [public_id])
+  status_history  status_history[]
+  audit_logs      audit_log[]
+}
+
+model organization {
+  id          Int                   @id @default(autoincrement())
+  public_id   String                @unique @default(uuid())
+  name        String
+  description String
+  website     String?
+  email       String                @unique
+  password    String
+  phone       String
+  cnpj        String                @unique
+  status      Status
+  verified    Boolean               @default(false)
+  created_at  DateTime              @default(now())
+  updated_at  DateTime              @updatedAt()
+  donations   donation[]
+  projects    project[]
+  members     organization_member[]
+  allocations allocation[]
+}
+
+enum PaymentMethod {
+  PIX
+  TRANSFER
+  CREDIT
+  DEBIT
+}
+
+enum DonateStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+}
+
+model donation {
+  id                     Int                     @id @default(autoincrement())
+  public_id              String                  @unique @default(uuid())
+  donor                  donor                   @relation(fields: [donor_id], references: [public_id])
+  donor_id               String
+  organization           organization            @relation(fields: [organization_id], references: [public_id])
+  organization_id        String
+  value                  Decimal                 @db.Decimal(10, 2)
+  date                   DateTime
+  payment_method         PaymentMethod
+  status                 DonateStatus
+  allocations            allocation[]
+  blockchain_transaction blockchain_transaction?
+}
+
+enum ProjectStatus {
+  ACTIVE
+  PAUSED
+  FINISHED
+  CANCELLED
+}
+
+model project {
+  id              Int           @id @default(autoincrement())
+  public_id       String        @unique @default(uuid())
+  organization    organization  @relation(fields: [organizationId], references: [public_id])
+  organizationId  String
+  title           String
+  description     String
+  goalAmount      Decimal       @db.Decimal(18, 4)
+  collectedAmount Decimal       @db.Decimal(18, 4)
+  start_date      DateTime
+  end_date        DateTime?
+  status          ProjectStatus
+  created_at      DateTime      @default(now())
+  updated_at      DateTime      @updatedAt()
+  allocations     allocation[]
+  expenses        expense[]
+}
+
+model allocation {
+  id                     Int                     @id @default(autoincrement())
+  public_id              String                  @unique @default(uuid())
+  donation               donation                @relation(fields: [donation_id], references: [public_id])
+  donation_id            String
+  project                project                 @relation(fields: [project_id], references: [public_id])
+  project_id             String
+  organization           organization            @relation(fields: [organization_id], references: [public_id])
+  organization_id        String
+  amount_allocated       Decimal                 @db.Decimal(10, 2)
+  allocation_date        DateTime                @default(now())
+  blockchain_transaction blockchain_transaction?
+}
+
+enum ExpenseStatus {
+  PAID
+  PENDING
+  CANCELLED
+}
+
+model expense {
+  id           Int           @id @default(autoincrement())
+  public_id    String        @unique @default(uuid())
+  project      project       @relation(fields: [project_id], references: [public_id])
+  project_id   String
+  name         String
+  description  String
+  value        Decimal       @db.Decimal(10, 2)
+  status       ExpenseStatus
+  payment_date DateTime?
+  created_at   DateTime      @default(now())
+}
+
+enum BlockchainTransactionType {
+  DONATION
+  ALLOCATION
+}
+
+enum BlockchainTransactionStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+}
+
+model blockchain_transaction {
+  id              Int                         @id @default(autoincrement())
+  public_id       String                      @unique @default(uuid())
+  hash            String                      @unique
+  type            BlockchainTransactionType
+  block_number    Int
+  network         String
+  timestamp       DateTime
+  value           Decimal                     @db.Decimal(10, 2)
+  donation        donation?                   @relation(fields: [donation_id], references: [public_id])
+  donation_id     String?                     @unique
+  allocation      allocation?                 @relation(fields: [allocation_id], references: [public_id])
+  allocation_id   String?                     @unique
+  status          BlockchainTransactionStatus
+  blockchain_logs blockchain_log[]
+}
+
+enum BlockchainLogLevel {
+  INFO
+  ERROR
+  WARN
+}
+
+model blockchain_log {
+  id             Int                    @id @default(autoincrement())
+  transaction    blockchain_transaction @relation(fields: [transaction_id], references: [public_id])
+  transaction_id String
+  message        String
+  level          BlockchainLogLevel
+  timestamp      DateTime               @default(now())
+}
+
+model audit_log {
+  id         Int                  @id @default(autoincrement())
+  member     organization_member? @relation(fields: [member_id], references: [public_id])
+  member_id  String?
+  action     String
+  entityType String
+  entityId   String?
+  timestamp  DateTime             @default(now())
+  metadata   Json?
+}
+
+model status_history {
+  id                  Int                  @id @default(autoincrement())
+  entity_type         String
+  entity_id           String
+  old_status          String?
+  new_status          String
+  changed_by_id       String?
+  organization_member organization_member? @relation(fields: [changed_by_id], references: [public_id])
+  changed_at          DateTime             @default(now())
+}
+
+model session {
+  id         Int      @id @default(autoincrement())
+  person     person   @relation(fields: [user_id], references: [public_id])
+  user_id    String
+  token      String   @unique
+  expires_at DateTime
+  created_at DateTime @default(now())
+  revoked    Boolean  @default(false)
 }

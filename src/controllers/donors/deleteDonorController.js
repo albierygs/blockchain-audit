@@ -2,27 +2,28 @@ const ApiException = require("../../exceptions/apiException");
 const { db } = require("../../utils/db");
 
 const deleteDonor = async (req, res) => {
-  const donor = await db.donor.findUnique({
+  const person = await db.person.findUnique({
     where: {
-      public_id: req.userPublicId,
+      public_id: req.user.publicId,
       status: "ACTIVE",
+      role: "DONOR",
     },
   });
 
-  if (!donor) {
+  if (!person) {
     throw new ApiException("user not found", 404);
   }
 
-  await db.donor.update({
+  await db.person.update({
     where: {
-      public_id: req.userPublicId,
+      public_id: req.user.publicId,
     },
     data: {
       status: "INACTIVE",
     },
   });
 
-  res.status(201).send();
+  res.status(204).send();
 };
 
 module.exports = deleteDonor;

@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const { DONOR_SECRET_KET_JWT } = require("../utils/constants");
+const { SECRET_KET_JWT } = require("../utils/constants");
 const ApiException = require("../exceptions/apiException");
 
 const validateToken = async (req, _res, next) => {
@@ -11,12 +11,12 @@ const validateToken = async (req, _res, next) => {
 
   const token = authorization.replace("Bearer ", "");
 
-  jwt.verify(token, DONOR_SECRET_KET_JWT, (error, decoded) => {
+  jwt.verify(token, SECRET_KET_JWT, (error, decoded) => {
     if (error) {
       throw new ApiException(error.message, 401);
     }
 
-    req.userPublicId = decoded.publicId;
+    req.user = decoded;
     next();
   });
 };

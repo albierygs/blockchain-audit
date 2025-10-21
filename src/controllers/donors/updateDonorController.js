@@ -2,37 +2,67 @@ const { db } = require("../../utils/db");
 const ApiException = require("../../exceptions/apiException");
 
 const updateDonor = async (req, res) => {
-  const donor = await db.donor.findUnique({
+  const { name, email, phone, document, password } = req.body;
+
+  let person = await db.person.findFirst({
     where: {
-      public_id: req.userPublicId,
       status: "ACTIVE",
+      role: "DONOR",
+      OR: [{ email }, { document }],
+      NOT: { public_id: req.user.publicId },
     },
   });
 
-  if (!donor) {
+  if (person) {
+    throw new ApiException("Email or document already in use", 409);
+  }
+
+  person = await db.person.findUnique({
+    where: {
+      public_id: req.user.publicId,
+      status: "ACTIVE",
+      role: "DONOR",
+    },
+  });
+
+  if (!person) {
     throw new ApiException("user not found", 404);
   }
 
-  if (req.body.document && req.body.document.length !== donor.document.length) {
+  if (
+    req.body.document &&
+    req.body.document.length !== person.document.length
+  ) {
     throw new ApiException("invalid document", 422);
   }
 
-  const updatedDonor = await db.donor.update({
+  const updatedPerson = await db.person.update({
     where: {
-      public_id: req.userPublicId,
+      public_id: req.user.publicId,
     },
     data: req.body,
+    select: {
+      public_id: true,
+      name: true,
+      email: true,
+      document: true,
+      phone: true,
+      updated_at: true,
+      donor: {
+        select: {
+          document_type: true,
+        },
+      },
+    },
   });
 
-  res.status(200).json({
-    publicId: updatedDonor.public_id,
-    name: updatedDonor.name,
-    email: updatedDonor.email,
-    document: updatedDonor.document,
-    documentType: updatedDonor.document_type,
-    phone: updatedDonor.phone,
-    updatedAt: updatedDonor.updatedAt,
-  });
+  const response = {
+    ...updatedPerson,
+    document_type: updatedPerson.donor.document_type,
+    donor: undefined,
+  };
+
+  res.status(200).json(response);
 };
 
 module.exports = updateDonor;
