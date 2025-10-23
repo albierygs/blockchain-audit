@@ -7,7 +7,7 @@ const {
   updateOrganization,
   listVerifiedOrganizations,
   verifyOrganization,
-} = require("../controllers/organization");
+} = require("../controllers/organizations");
 const {
   validateToken,
   authorizeRoles,
@@ -17,7 +17,7 @@ const {
 const {
   createOrganizationSchema,
   updateOrganizationSchema,
-} = require("../schemas/organization");
+} = require("../schemas/organizations");
 
 const organizationRoutes = Router();
 
