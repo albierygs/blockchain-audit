@@ -39,7 +39,7 @@ organizationRoutes.put(
   "/:id/verify",
   validateToken,
   authorizeRoles(["ADMIN"]),
-  validateParamId("ORGANIZATION"),
+  validateParamId("MEMBER_TO_ORGANIZATION"),
   verifyOrganization
 );
 
@@ -50,7 +50,7 @@ organizationRoutes.get(
     ["ADMIN", "ORG_MEMBER"],
     ["ORG_ADMIN", "AUDITOR", "VOLUNTEER"]
   ),
-  validateParamId("ORGANIZATION"),
+  validateParamId("MEMBER_TO_ORGANIZATION"),
   getOrganization
 );
 
@@ -64,7 +64,7 @@ organizationRoutes.put(
   "/:id",
   validateToken,
   authorizeRoles(["ADMIN", "ORG_MEMBER"], ["ORG_ADMIN"]),
-  validateParamId("ORGANIZATION"),
+  validateParamId("MEMBER_TO_ORGANIZATION"),
   validateReqBody(updateOrganizationSchema),
   updateOrganization
 );
@@ -73,7 +73,7 @@ organizationRoutes.delete(
   "/:id",
   validateToken,
   authorizeRoles(["ADMIN", "ORG_MEMBER"], ["ORG_ADMIN"]),
-  validateParamId("ORGANIZATION"),
+  validateParamId("MEMBER_TO_ORGANIZATION"),
   deleteOrganization
 );
 

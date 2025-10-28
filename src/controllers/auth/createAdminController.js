@@ -9,7 +9,6 @@ const createAdmin = async (req, res) => {
   const person = await db.person.findFirst({
     where: {
       OR: [{ email }, { document }],
-      role: "ADMIN",
     },
   });
 
@@ -26,7 +25,6 @@ const createAdmin = async (req, res) => {
       name,
       password: passwordHash,
       phone,
-      status: "ACTIVE",
       role: "ADMIN",
     },
     select: {

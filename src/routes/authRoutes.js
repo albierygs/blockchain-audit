@@ -2,7 +2,6 @@ const { Router } = require("express");
 const {
   loginPerson,
   createDonor,
-  createMember,
   createAdmin,
 } = require("../controllers/auth/");
 const {
@@ -13,7 +12,6 @@ const {
 const {
   loginSchema,
   createDonorSchema,
-  createMemberSchema,
   createAdminSchema,
 } = require("../schemas/auth");
 
@@ -27,15 +25,7 @@ authRoutes.post(
   createDonor
 );
 
-authRoutes.use(
-  "/register/member",
-  validateToken,
-  authorizeRoles(["ADMIN", "ORG_MEMBER"], ["ORG_ADMIN"]),
-  validateReqBody(createMemberSchema),
-  createMember
-);
-
-authRoutes.use(
+authRoutes.post(
   "/register/admin",
   validateToken,
   authorizeRoles(["ADMIN"]),

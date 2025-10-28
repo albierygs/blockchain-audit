@@ -29,10 +29,7 @@ const createAdminSchema = z
       ),
     document: z.string("document required").refine(
       (value) => {
-        return (
-          value.replace(/\s+/g, "").replace(/\D/g, "").length === 11 ||
-          value.replace(/\s+/g, "").replace(/\D/g, "").length === 14
-        );
+        return value.replace(/\s+/g, "").replace(/\D/g, "").length === 11;
       },
       { error: "invalid document" }
     ),

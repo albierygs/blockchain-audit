@@ -22,6 +22,8 @@ const verifyOrganization = async (req, res) => {
     },
     data: {
       verified: true,
+      verified_at: new Date(),
+      verified_by: req.user.publicId,
     },
   });
 

@@ -14,7 +14,7 @@ donorsRoute.get(
   "/:id",
   validateToken,
   authorizeRoles(["DONOR", "ADMIN"]),
-  validateParamId("PERSON"),
+  validateParamId("SELF"),
   getDonor
 );
 
@@ -22,7 +22,7 @@ donorsRoute.put(
   "/:id",
   validateToken,
   authorizeRoles(["DONOR", "ADMIN"]),
-  validateParamId("PERSON"),
+  validateParamId("SELF"),
   validateReqBody(updateDonorSchema),
   updateDonor
 );
@@ -31,7 +31,7 @@ donorsRoute.delete(
   "/:id",
   validateToken,
   authorizeRoles(["DONOR", "ADMIN"]),
-  validateParamId("PERSON"),
+  validateParamId("SELF"),
   deleteDonor
 );
 

@@ -20,7 +20,7 @@ const loginPerson = async (req, res) => {
       },
     });
   } else {
-    person = await db.person.findUnique({
+    person = await db.person.findFirst({
       where: {
         organization_member: {
           member_code: req.body.memberCode,

@@ -9,7 +9,6 @@ const createDonor = async (req, res) => {
   const person = await db.person.findFirst({
     where: {
       OR: [{ email }, { document }],
-      role: "DONOR",
     },
   });
 
@@ -26,7 +25,6 @@ const createDonor = async (req, res) => {
       name,
       password: passwordHash,
       phone,
-      status: "ACTIVE",
       role: "DONOR",
       donor: {
         create: {
