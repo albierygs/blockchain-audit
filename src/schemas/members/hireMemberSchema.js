@@ -1,6 +1,6 @@
 const { z } = require("zod");
 
-const createMemberSchema = z
+const hireMemberSchema = z
   .object({
     name: z
       .string("name required")
@@ -29,10 +29,7 @@ const createMemberSchema = z
       ),
     document: z.string("document required").refine(
       (value) => {
-        return (
-          value.replace(/\s+/g, "").replace(/\D/g, "").length === 11 ||
-          value.replace(/\s+/g, "").replace(/\D/g, "").length === 14
-        );
+        return value.replace(/\s+/g, "").replace(/\D/g, "").length === 11;
       },
       { error: "invalid document" }
     ),
@@ -43,4 +40,4 @@ const createMemberSchema = z
   })
   .strict();
 
-module.exports = createMemberSchema;
+module.exports = hireMemberSchema;

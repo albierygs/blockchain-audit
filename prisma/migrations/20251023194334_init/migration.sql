@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `person` MODIFY `status` ENUM('ACTIVE', 'INACTIVE') NOT NULL DEFAULT 'ACTIVE';

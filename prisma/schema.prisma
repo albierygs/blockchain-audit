@@ -14,6 +14,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ========================================
+// ENUMS
+// ========================================
+
 enum Status {
   ACTIVE
   INACTIVE
@@ -25,33 +29,9 @@ enum PersonRole {
   ADMIN
 }
 
-model person {
-  id                  Int                  @id @default(autoincrement())
-  public_id           String               @unique @default(uuid())
-  name                String
-  email               String               @unique
-  password            String
-  phone               String
-  document            String               @unique
-  status              Status
-  role                PersonRole
-  created_at          DateTime             @default(now())
-  updated_at          DateTime             @updatedAt()
-  sessions            session[]
-  donor               donor?
-  organization_member organization_member?
-}
-
 enum DocumentType {
   CPF
   CNPJ
-}
-
-model donor {
-  public_id     String       @id @unique
-  person        person       @relation(fields: [public_id], references: [public_id], onDelete: Cascade, onUpdate: Cascade)
-  document_type DocumentType
-  donations     donation[]
 }
 
 enum MemberRole {
@@ -60,35 +40,10 @@ enum MemberRole {
   VOLUNTEER
 }
 
-model organization_member {
-  public_id       String           @id @unique
-  person          person           @relation(fields: [public_id], references: [public_id], onDelete: Cascade, onUpdate: Cascade)
-  member_code     String?          @unique
-  role            MemberRole?
-  organization_id String?
-  organization    organization?    @relation(fields: [organization_id], references: [public_id])
-  status_history  status_history[]
-  audit_logs      audit_log[]
-}
-
-model organization {
-  id          Int                   @id @default(autoincrement())
-  public_id   String                @unique @default(uuid())
-  name        String
-  description String
-  website     String?
-  email       String                @unique
-  password    String
-  phone       String
-  cnpj        String                @unique
-  status      Status
-  verified    Boolean               @default(false)
-  created_at  DateTime              @default(now())
-  updated_at  DateTime              @updatedAt()
-  donations   donation[]
-  projects    project[]
-  members     organization_member[]
-  allocations allocation[]
+enum MembershipStatus {
+  ACTIVE
+  TERMINATED
+  SUSPENDED
 }
 
 enum PaymentMethod {
@@ -98,83 +53,38 @@ enum PaymentMethod {
   DEBIT
 }
 
-enum DonateStatus {
+enum DonationStatus {
   PENDING
   CONFIRMED
   FAILED
-}
-
-model donation {
-  id                     Int                     @id @default(autoincrement())
-  public_id              String                  @unique @default(uuid())
-  donor                  donor                   @relation(fields: [donor_id], references: [public_id])
-  donor_id               String
-  organization           organization            @relation(fields: [organization_id], references: [public_id])
-  organization_id        String
-  value                  Decimal                 @db.Decimal(10, 2)
-  date                   DateTime
-  payment_method         PaymentMethod
-  status                 DonateStatus
-  allocations            allocation[]
-  blockchain_transaction blockchain_transaction?
+  CANCELLED
+  REFUNDED
 }
 
 enum ProjectStatus {
+  DRAFT
   ACTIVE
   PAUSED
   FINISHED
   CANCELLED
 }
 
-model project {
-  id              Int           @id @default(autoincrement())
-  public_id       String        @unique @default(uuid())
-  organization    organization  @relation(fields: [organizationId], references: [public_id])
-  organizationId  String
-  title           String
-  description     String
-  goalAmount      Decimal       @db.Decimal(18, 4)
-  collectedAmount Decimal       @db.Decimal(18, 4)
-  start_date      DateTime
-  end_date        DateTime?
-  status          ProjectStatus
-  created_at      DateTime      @default(now())
-  updated_at      DateTime      @updatedAt()
-  allocations     allocation[]
-  expenses        expense[]
-}
-
-model allocation {
-  id                     Int                     @id @default(autoincrement())
-  public_id              String                  @unique @default(uuid())
-  donation               donation                @relation(fields: [donation_id], references: [public_id])
-  donation_id            String
-  project                project                 @relation(fields: [project_id], references: [public_id])
-  project_id             String
-  organization           organization            @relation(fields: [organization_id], references: [public_id])
-  organization_id        String
-  amount_allocated       Decimal                 @db.Decimal(10, 2)
-  allocation_date        DateTime                @default(now())
-  blockchain_transaction blockchain_transaction?
-}
-
 enum ExpenseStatus {
-  PAID
   PENDING
+  APPROVED
+  PAID
+  REJECTED
   CANCELLED
 }
 
-model expense {
-  id           Int           @id @default(autoincrement())
-  public_id    String        @unique @default(uuid())
-  project      project       @relation(fields: [project_id], references: [public_id])
-  project_id   String
-  name         String
-  description  String
-  value        Decimal       @db.Decimal(10, 2)
-  status       ExpenseStatus
-  payment_date DateTime?
-  created_at   DateTime      @default(now())
+enum ExpenseCategory {
+  INFRASTRUCTURE
+  SUPPLIES
+  SERVICES
+  PERSONNEL
+  MARKETING
+  ADMINISTRATIVE
+  OTHER
 }
 
 enum BlockchainTransactionType {
@@ -188,47 +98,313 @@ enum BlockchainTransactionStatus {
   FAILED
 }
 
-model blockchain_transaction {
-  id              Int                         @id @default(autoincrement())
-  public_id       String                      @unique @default(uuid())
-  hash            String                      @unique
-  type            BlockchainTransactionType
-  block_number    Int
-  network         String
-  timestamp       DateTime
-  value           Decimal                     @db.Decimal(10, 2)
-  donation        donation?                   @relation(fields: [donation_id], references: [public_id])
-  donation_id     String?                     @unique
-  allocation      allocation?                 @relation(fields: [allocation_id], references: [public_id])
-  allocation_id   String?                     @unique
-  status          BlockchainTransactionStatus
-  blockchain_logs blockchain_log[]
-}
-
 enum BlockchainLogLevel {
   INFO
   ERROR
   WARN
 }
 
+// ========================================
+// CORE MODELS
+// ========================================
+
+model person {
+  id                  Int                  @id @default(autoincrement())
+  public_id           String               @unique @default(uuid())
+  name                String
+  email               String               @unique
+  password            String
+  phone               String
+  document            String               @unique
+  status              Status               @default(ACTIVE)
+  role                PersonRole
+  created_at          DateTime             @default(now())
+  updated_at          DateTime             @updatedAt()
+  deleted_at          DateTime?
+  sessions            session[]
+  donor               donor?
+  organization_member organization_member?
+
+  hired_memberships      organization_membership[] @relation("HiredBy")
+  terminated_memberships organization_membership[] @relation("TerminatedBy")
+
+  @@index([email])
+  @@index([document])
+  @@index([status, role])
+}
+
+model donor {
+  public_id     String       @id @unique
+  person        person       @relation(fields: [public_id], references: [public_id], onDelete: Cascade, onUpdate: Cascade)
+  document_type DocumentType
+  donations     donation[]
+  created_at    DateTime     @default(now())
+  updated_at    DateTime     @updatedAt()
+}
+
+model organization_member {
+  public_id       String           @id @unique
+  person          person           @relation(fields: [public_id], references: [public_id], onDelete: Cascade, onUpdate: Cascade)
+  member_code     String?          @unique
+  role            MemberRole?
+  status          MembershipStatus @default(ACTIVE)
+  organization_id String?
+  organization    organization?    @relation(fields: [organization_id], references: [public_id])
+  created_at      DateTime         @default(now())
+  updated_at      DateTime         @updatedAt()
+
+  status_history status_history[]
+  audit_logs     audit_log[]
+  memberships    organization_membership[] @relation("Member")
+
+  @@index([member_code])
+  @@index([organization_id])
+  @@index([status])
+}
+
+model organization {
+  id          Int       @id @default(autoincrement())
+  public_id   String    @unique @default(uuid())
+  name        String
+  description String
+  website     String?
+  email       String    @unique
+  password    String
+  phone       String
+  cnpj        String    @unique
+  status      Status
+  verified    Boolean   @default(false)
+  verified_at DateTime?
+  verified_by String?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt()
+  deleted_at  DateTime?
+
+  donations   donation[]
+  projects    project[]
+  members     organization_member[]
+  allocations allocation[]
+  memberships organization_membership[]
+
+  @@index([email])
+  @@index([cnpj])
+  @@index([status, verified])
+}
+
+model organization_membership {
+  id        Int    @id @default(autoincrement())
+  public_id String @unique @default(uuid())
+
+  member    organization_member @relation("Member", fields: [member_id], references: [public_id])
+  member_id String
+
+  organization    organization @relation(fields: [organization_id], references: [public_id])
+  organization_id String
+
+  role   MemberRole
+  status MembershipStatus @default(ACTIVE)
+
+  hired_at      DateTime  @default(now())
+  terminated_at DateTime?
+
+  hired_by    person @relation("HiredBy", fields: [hired_by_id], references: [public_id])
+  hired_by_id String
+
+  terminated_by      person? @relation("TerminatedBy", fields: [terminated_by_id], references: [public_id])
+  terminated_by_id   String?
+  termination_reason String? @db.Text
+  notes              String? @db.Text
+
+  @@unique([member_id, organization_id, hired_at])
+  @@index([member_id])
+  @@index([organization_id])
+  @@index([status])
+  @@index([member_id, organization_id])
+}
+
+// ========================================
+// FINANCIAL MODELS
+// ========================================
+
+model donation {
+  id              Int            @id @default(autoincrement())
+  public_id       String         @unique @default(uuid())
+  donor           donor          @relation(fields: [donor_id], references: [public_id])
+  donor_id        String
+  organization    organization   @relation(fields: [organization_id], references: [public_id])
+  organization_id String
+  value           Decimal        @db.Decimal(10, 2)
+  date            DateTime
+  payment_method  PaymentMethod
+  status          DonationStatus @default(PENDING)
+
+  confirmed_at        DateTime?
+  cancelled_at        DateTime?
+  cancelled_by        String?
+  cancellation_reason String?   @db.Text
+
+  allocations            allocation[]
+  blockchain_transaction blockchain_transaction?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt()
+
+  @@index([donor_id])
+  @@index([organization_id])
+  @@index([status])
+  @@index([date])
+  @@index([donor_id, status])
+}
+
+model project {
+  id               Int           @id @default(autoincrement())
+  public_id        String        @unique @default(uuid())
+  organization     organization  @relation(fields: [organization_id], references: [public_id])
+  organization_id  String
+  title            String
+  description      String
+  goal_amount      Decimal       @db.Decimal(18, 4)
+  collected_amount Decimal       @default(0) @db.Decimal(18, 4)
+  start_date       DateTime
+  end_date         DateTime?
+  status           ProjectStatus @default(DRAFT)
+
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt()
+  deleted_at DateTime?
+
+  allocations allocation[]
+  expenses    expense[]
+
+  @@index([organization_id])
+  @@index([status])
+  @@index([organization_id, status])
+  @@index([start_date, end_date])
+}
+
+model allocation {
+  id                     Int                     @id @default(autoincrement())
+  public_id              String                  @unique @default(uuid())
+  donation               donation                @relation(fields: [donation_id], references: [public_id])
+  donation_id            String
+  project                project                 @relation(fields: [project_id], references: [public_id])
+  project_id             String
+  amount_allocated       Decimal                 @db.Decimal(18, 4)
+  allocation_date        DateTime                @default(now())
+  blockchain_transaction blockchain_transaction?
+  expenses               expense[]
+  organization           organization?           @relation(fields: [organizationId], references: [public_id])
+  organizationId         String?
+
+  @@index([donation_id])
+  @@index([project_id])
+}
+
+model expense {
+  id            Int         @id @default(autoincrement())
+  public_id     String      @unique @default(uuid())
+  project       project     @relation(fields: [project_id], references: [public_id])
+  project_id    String
+  allocation    allocation? @relation(fields: [allocation_id], references: [public_id])
+  allocation_id String?
+
+  name           String
+  description    String          @db.Text
+  value          Decimal         @db.Decimal(18, 4)
+  category       ExpenseCategory @default(OTHER)
+  status         ExpenseStatus   @default(PENDING)
+  payment_date   DateTime?
+  receipt_url    String?
+  invoice_number String?
+
+  created_by  String?
+  approved_by String?
+  approved_at DateTime?
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt()
+
+  @@index([project_id])
+  @@index([allocation_id])
+  @@index([status])
+  @@index([category])
+}
+
+// ========================================
+// BLOCKCHAIN MODELS
+// ========================================
+
+model blockchain_transaction {
+  id        Int                       @id @default(autoincrement())
+  public_id String                    @unique @default(uuid())
+  hash      String                    @unique
+  type      BlockchainTransactionType
+
+  block_number Int
+  network      String
+  timestamp    DateTime
+  value        Decimal  @db.Decimal(10, 2)
+
+  gas_used      Decimal? @db.Decimal(18, 8)
+  gas_price     Decimal? @db.Decimal(18, 8)
+  from_address  String?
+  to_address    String?
+  confirmations Int      @default(0)
+
+  donation    donation? @relation(fields: [donation_id], references: [public_id])
+  donation_id String?   @unique
+
+  allocation    allocation? @relation(fields: [allocation_id], references: [public_id])
+  allocation_id String?     @unique
+
+  status BlockchainTransactionStatus
+
+  blockchain_logs blockchain_log[]
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt()
+
+  @@index([hash])
+  @@index([type, status])
+  @@index([block_number])
+  @@index([network])
+  @@index([timestamp])
+}
+
 model blockchain_log {
   id             Int                    @id @default(autoincrement())
   transaction    blockchain_transaction @relation(fields: [transaction_id], references: [public_id])
   transaction_id String
-  message        String
+  message        String                 @db.Text
   level          BlockchainLogLevel
   timestamp      DateTime               @default(now())
+
+  @@index([transaction_id])
+  @@index([level])
+  @@index([timestamp])
 }
 
+// ========================================
+// AUDIT & HISTORY MODELS
+// ========================================
+
 model audit_log {
-  id         Int                  @id @default(autoincrement())
-  member     organization_member? @relation(fields: [member_id], references: [public_id])
-  member_id  String?
-  action     String
-  entityType String
-  entityId   String?
-  timestamp  DateTime             @default(now())
-  metadata   Json?
+  id          Int                  @id @default(autoincrement())
+  member      organization_member? @relation(fields: [member_id], references: [public_id])
+  member_id   String?
+  action      String
+  entity_type String
+  entity_id   String?
+  description String?              @db.Text
+  ip_address  String?
+  user_agent  String?
+  timestamp   DateTime             @default(now())
+  metadata    Json?
+
+  @@index([member_id])
+  @@index([entity_type, entity_id])
+  @@index([timestamp])
+  @@index([action])
 }
 
 model status_history {
@@ -237,17 +413,34 @@ model status_history {
   entity_id           String
   old_status          String?
   new_status          String
+  reason              String?              @db.Text
   changed_by_id       String?
   organization_member organization_member? @relation(fields: [changed_by_id], references: [public_id])
   changed_at          DateTime             @default(now())
+  metadata            Json?
+
+  @@index([entity_type, entity_id])
+  @@index([changed_at])
+  @@index([changed_by_id])
 }
 
+// ========================================
+// SESSION MODEL
+// ========================================
+
 model session {
-  id         Int      @id @default(autoincrement())
-  person     person   @relation(fields: [user_id], references: [public_id])
+  id         Int       @id @default(autoincrement())
+  person     person    @relation(fields: [user_id], references: [public_id])
   user_id    String
-  token      String   @unique
+  token      String    @unique
   expires_at DateTime
-  created_at DateTime @default(now())
-  revoked    Boolean  @default(false)
+  created_at DateTime  @default(now())
+  revoked    Boolean   @default(false)
+  revoked_at DateTime?
+  ip_address String?
+  user_agent String?   @db.Text
+
+  @@index([user_id])
+  @@index([expires_at])
+  @@index([token, revoked])
 }

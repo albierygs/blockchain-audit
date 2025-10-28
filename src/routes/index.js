@@ -4,6 +4,7 @@ const donorsRoute = require("./donorsRoutes");
 const authRotes = require("./authRoutes");
 const membersRoutes = require("./membersRoutes");
 const organizationsRoutes = require("./organizationsRoutes");
+const { projectsRoutes, singleProjectRoutes } = require("./projectsRoutes");
 
 const routes = Router();
 
@@ -12,5 +13,7 @@ routes.use("/auth", authRotes);
 routes.use("/donors", donorsRoute);
 routes.use("/members", membersRoutes);
 routes.use("/organizations", organizationsRoutes);
+routes.use("/organizations/:id/projects", projectsRoutes);
+routes.use("/projects", singleProjectRoutes);
 
 module.exports = routes;

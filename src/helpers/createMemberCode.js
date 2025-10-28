@@ -15,10 +15,9 @@ const generateMemberCode = async () => {
       },
     });
     if (!existingMember) {
-      break;
+      return result;
     }
   }
-  return result;
 };
 
 module.exports = generateMemberCode;
