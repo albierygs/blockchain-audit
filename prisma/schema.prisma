@@ -292,7 +292,6 @@ model allocation {
   amount_allocated       Decimal                 @db.Decimal(18, 4)
   allocation_date        DateTime                @default(now())
   blockchain_transaction blockchain_transaction?
-  expenses               expense[]
   organization           organization?           @relation(fields: [organizationId], references: [public_id])
   organizationId         String?
 
@@ -301,12 +300,10 @@ model allocation {
 }
 
 model expense {
-  id            Int         @id @default(autoincrement())
-  public_id     String      @unique @default(uuid())
-  project       project     @relation(fields: [project_id], references: [public_id])
-  project_id    String
-  allocation    allocation? @relation(fields: [allocation_id], references: [public_id])
-  allocation_id String?
+  id         Int     @id @default(autoincrement())
+  public_id  String  @unique @default(uuid())
+  project    project @relation(fields: [project_id], references: [public_id])
+  project_id String
 
   name           String
   description    String          @db.Text
@@ -321,11 +318,11 @@ model expense {
   approved_by String?
   approved_at DateTime?
 
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt()
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt()
+  deleted_at DateTime?
 
   @@index([project_id])
-  @@index([allocation_id])
   @@index([status])
   @@index([category])
 }
