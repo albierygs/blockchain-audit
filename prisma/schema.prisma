@@ -429,7 +429,7 @@ model session {
   id         Int       @id @default(autoincrement())
   person     person    @relation(fields: [user_id], references: [public_id])
   user_id    String
-  token      String    @unique
+  token      String    @db.Text
   expires_at DateTime
   created_at DateTime  @default(now())
   revoked    Boolean   @default(false)
@@ -439,5 +439,5 @@ model session {
 
   @@index([user_id])
   @@index([expires_at])
-  @@index([token, revoked])
+  @@index([token(length: 255), revoked])
 }

@@ -78,7 +78,7 @@ const loginPerson = async (req, res) => {
 
   await db.session.create({
     data: {
-      token,
+      token: token,
       ip_address: userIp,
       user_agent: userAgent,
       expires_at: expirationDate,

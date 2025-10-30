@@ -12,14 +12,14 @@ const validateToken = async (req, _res, next) => {
 
   const token = authorization.replace("Bearer ", "");
 
-  const session = await db.session.findUnique({
+  const session = await db.session.findFirst({
     where: {
       token: token,
     },
     select: {
-      user_id: true,
       revoked: true,
       expires_at: true,
+      user_id: true,
     },
   });
 
