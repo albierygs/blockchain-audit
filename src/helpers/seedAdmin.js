@@ -19,7 +19,7 @@ const seedAdmin = async () => {
       data: {
         name: "Administrator",
         email: ADMIN_EMAIL,
-        password: await bcryptjs.hash(ADMIN_PASSWORD, Number(SALT_BCRYPT)),
+        password: await bcryptjs.hash(ADMIN_PASSWORD, SALT_BCRYPT),
         role: "ADMIN",
         status: "ACTIVE",
         document: "00000000000",

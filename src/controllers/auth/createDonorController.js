@@ -16,7 +16,7 @@ const createDonor = async (req, res) => {
     throw new ApiException("email/document already been used", 409);
   }
 
-  const passwordHash = await bcrypt.hash(password, Number(SALT_BCRYPT));
+  const passwordHash = await bcrypt.hash(password, SALT_BCRYPT);
 
   const personCreated = await db.person.create({
     data: {

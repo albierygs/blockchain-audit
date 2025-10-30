@@ -49,7 +49,7 @@ const hireMember = async (req, res) => {
     throw new ApiException("Member already active in this organization", 409);
   }
 
-  const passwordHash = await bcrypt.hash(password, Number(SALT_BCRYPT));
+  const passwordHash = await bcrypt.hash(password, SALT_BCRYPT);
 
   const result = await db.$transaction(async (tx) => {
     if (!person) {

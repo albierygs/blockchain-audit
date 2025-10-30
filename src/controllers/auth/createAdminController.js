@@ -16,7 +16,7 @@ const createAdmin = async (req, res) => {
     throw new ApiException("email/document already been used", 409);
   }
 
-  const passwordHash = await bcrypt.hash(password, Number(SALT_BCRYPT));
+  const passwordHash = await bcrypt.hash(password, SALT_BCRYPT);
 
   const admin = await db.person.create({
     data: {
