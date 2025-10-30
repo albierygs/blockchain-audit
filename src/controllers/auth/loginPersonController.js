@@ -1,5 +1,9 @@
 const ApiException = require("../../exceptions/apiException");
-const { SECRET_KET_JWT } = require("../../utils/constants");
+const {
+  SECRET_KET_JWT,
+  JWT_EXPIRATION_TIME,
+  JWT_EXPIRATION_UNIT,
+} = require("../../utils/constants");
 const { db } = require("../../utils/db");
 const bcryptjs = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -55,7 +59,7 @@ const loginPerson = async (req, res) => {
   }
 
   const options = {
-    expiresIn: "10m",
+    expiresIn: JWT_EXPIRATION_TIME + JWT_EXPIRATION_UNIT,
   };
 
   let payload = { publicId: person.public_id, role: person.role };
@@ -66,10 +70,26 @@ const loginPerson = async (req, res) => {
 
   const token = jwt.sign(payload, SECRET_KET_JWT, options);
 
+  const expirationDate = new Date();
+  expirationDate.setMinutes(expirationDate.getMinutes() + JWT_EXPIRATION_TIME);
+
+  const userAgent = req.headers["user-agent"];
+  const userIp = req.ip;
+
+  await db.session.create({
+    data: {
+      token,
+      ip_address: userIp,
+      user_agent: userAgent,
+      expires_at: expirationDate,
+      user_id: person.public_id,
+    },
+  });
+
   res.status(200).json({
     token,
     created_at: new Date().toLocaleString(),
-    duration: "10 minutes",
+    duration: JWT_EXPIRATION_TIME + JWT_EXPIRATION_UNIT,
   });
 };
 

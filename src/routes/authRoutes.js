@@ -3,6 +3,7 @@ const {
   loginPerson,
   createDonor,
   createAdmin,
+  logoutPerson,
 } = require("../controllers/auth/");
 const {
   validateReqBody,
@@ -18,6 +19,8 @@ const {
 const authRoutes = Router();
 
 authRoutes.post("/login", validateReqBody(loginSchema), loginPerson);
+
+authRoutes.delete("/logout", validateToken, logoutPerson);
 
 authRoutes.post(
   "/register/donor",
