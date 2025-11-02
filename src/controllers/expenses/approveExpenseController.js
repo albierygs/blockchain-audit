@@ -1,11 +1,15 @@
 const { db } = require("../../utils/db");
 const ApiException = require("../../exceptions/apiException");
+const { sendExpenseApprovalEmail } = require("../../utils/emailService");
 
 const approveExpense = async (req, res) => {
   const { id } = req.params; // expense public_id
 
   const expense = await db.expense.findUnique({
     where: { public_id: id },
+    include: {
+      project: true,
+    },
   });
 
   if (!expense) {
@@ -30,6 +34,19 @@ const approveExpense = async (req, res) => {
       approved_at: true,
     },
   });
+
+  const creator = await db.person.findUnique({
+    where: { public_id: expense.created_by },
+    select: { email: true },
+  });
+
+  if (creator) {
+    await sendExpenseApprovalEmail(
+      creator.email,
+      expense.project.title,
+      expense.name
+    );
+  }
 
   res.status(200).json(updatedExpense);
 };

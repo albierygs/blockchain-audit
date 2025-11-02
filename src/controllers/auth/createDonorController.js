@@ -2,6 +2,10 @@ const { db } = require("../../utils/db");
 const ApiException = require("../../exceptions/apiException");
 const bcrypt = require("bcryptjs");
 const { SALT_BCRYPT } = require("../../utils/constants");
+const {
+  sendEmail,
+  sendWelcomeDonorEmail,
+} = require("../../utils/emailService");
 
 const createDonor = async (req, res) => {
   const { name, email, phone, document, password } = req.body;
@@ -47,6 +51,8 @@ const createDonor = async (req, res) => {
       },
     },
   });
+
+  await sendWelcomeDonorEmail(personCreated.name, personCreated.email);
 
   const response = {
     ...personCreated,

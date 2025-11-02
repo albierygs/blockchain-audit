@@ -2,14 +2,22 @@ const { db } = require("../../utils/db");
 const ApiException = require("../../exceptions/apiException");
 const bcrypt = require("bcryptjs");
 const { SALT_BCRYPT } = require("../../utils/constants");
+const {
+  sendPasswordResetConfirmationEmail,
+} = require("../../utils/emailService");
 
 const resetPassword = async (req, res) => {
   const { token, password } = req.body;
 
+  let resetToken;
+
   await db.$transaction(async (tx) => {
-    const resetToken = await tx.password_reset_token.findUnique({
+    resetToken = await tx.password_reset_token.findUnique({
       where: {
         token: token,
+      },
+      include: {
+        person: true,
       },
     });
 
@@ -48,6 +56,10 @@ const resetPassword = async (req, res) => {
       },
     });
   });
+
+  if (resetToken) {
+    await sendPasswordResetConfirmationEmail(resetToken.person.email);
+  }
 
   res.status(200).json({
     message: "Password successfully reset.",

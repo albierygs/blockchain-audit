@@ -1,5 +1,6 @@
 const { db } = require("../../utils/db");
 const ApiException = require("../../exceptions/apiException");
+const { sendOrganizationVerifiedEmail } = require("../../utils/emailService");
 
 const verifyOrganization = async (req, res) => {
   const existingOrganization = await db.organization.findUnique({
@@ -26,6 +27,11 @@ const verifyOrganization = async (req, res) => {
       verified_by: req.user.publicId,
     },
   });
+
+  await sendOrganizationVerifiedEmail(
+    existingOrganization.name,
+    existingOrganization.email
+  );
 
   res.status(204).send();
 };

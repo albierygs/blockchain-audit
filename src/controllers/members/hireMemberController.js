@@ -3,10 +3,10 @@ const ApiException = require("../../exceptions/apiException");
 const bcrypt = require("bcryptjs");
 const { SALT_BCRYPT } = require("../../utils/constants");
 const generateMemberCode = require("../../helpers/createMemberCode");
+const { sendMemberHiredEmail } = require("../../utils/emailService");
 
 const hireMember = async (req, res) => {
-  const { name, email, phone, document, password, role, organizationId } =
-    req.body;
+  const { name, email, phone, document, role, organizationId } = req.body;
 
   const org = await db.organization.findUnique({
     where: {
@@ -49,7 +49,8 @@ const hireMember = async (req, res) => {
     throw new ApiException("Member already active in this organization", 409);
   }
 
-  const passwordHash = await bcrypt.hash(password, SALT_BCRYPT);
+  const tempPassword = Math.floor(100000 + Math.random() * 900000).toString();
+  const passwordHash = await bcrypt.hash(tempPassword, SALT_BCRYPT);
 
   const result = await db.$transaction(async (tx) => {
     if (!person) {
@@ -75,8 +76,10 @@ const hireMember = async (req, res) => {
       where: { public_id: person.public_id },
     });
 
+    let memberCode = null;
+
     if (!member) {
-      const memberCode = await generateMemberCode();
+      memberCode = await generateMemberCode();
       member = await tx.organization_member.create({
         data: {
           public_id: person.public_id,
@@ -95,6 +98,7 @@ const hireMember = async (req, res) => {
         },
       });
     } else {
+      memberCode = member.member_code;
       member = await tx.organization_member.update({
         where: { public_id: person.public_id },
         data: {
@@ -131,6 +135,13 @@ const hireMember = async (req, res) => {
         status: true,
       },
     });
+
+    await sendMemberHiredEmail(
+      person.name,
+      person.email,
+      memberCode,
+      tempPassword
+    );
 
     return { person, member, membership };
   });

@@ -15,10 +15,6 @@ const hireMemberSchema = z
           .join(" ")
       ),
     email: z.email("invalid email").transform((value) => value.toLowerCase()),
-    password: z
-      .string("password required")
-      .min(6, "password min length is 6")
-      .max(14, "password max length is 14"),
     phone: z
       .string("phone required")
       .refine(
