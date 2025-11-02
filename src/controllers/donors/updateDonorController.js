@@ -2,7 +2,7 @@ const { db } = require("../../utils/db");
 const ApiException = require("../../exceptions/apiException");
 
 const updateDonor = async (req, res) => {
-  const { name, email, phone, document, password } = req.body;
+  const { name, email, phone, document } = req.body;
 
   let person = await db.person.findFirst({
     where: {
