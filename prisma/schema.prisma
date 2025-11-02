@@ -127,6 +127,7 @@ model person {
 
   hired_memberships      organization_membership[] @relation("HiredBy")
   terminated_memberships organization_membership[] @relation("TerminatedBy")
+  password_reset_token   password_reset_token[]
 
   @@index([email])
   @@index([document])
@@ -440,4 +441,20 @@ model session {
   @@index([user_id])
   @@index([expires_at])
   @@index([token(length: 255), revoked])
+}
+
+model password_reset_token {
+  id Int @id @default(autoincrement())
+
+  token String @unique
+
+  person  person @relation(fields: [user_id], references: [public_id])
+  user_id String
+
+  expires_at DateTime
+  used       Boolean  @default(false)
+  created_at DateTime @default(now())
+
+  @@index([user_id])
+  @@index([expires_at])
 }

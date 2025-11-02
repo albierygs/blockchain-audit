@@ -4,6 +4,8 @@ const {
   createDonor,
   createAdmin,
   logoutPerson,
+  forgotPassword,
+  resetPassword,
 } = require("../controllers/auth/");
 const {
   validateReqBody,
@@ -14,6 +16,8 @@ const {
   loginSchema,
   createDonorSchema,
   createAdminSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
 } = require("../schemas/auth");
 
 const authRoutes = Router();
@@ -34,6 +38,18 @@ authRoutes.post(
   authorizeRoles(["ADMIN"]),
   validateReqBody(createAdminSchema),
   createAdmin
+);
+
+authRoutes.post(
+  "/forgot-password",
+  validateReqBody(forgotPasswordSchema),
+  forgotPassword
+);
+
+authRoutes.post(
+  "/reset-password",
+  validateReqBody(resetPasswordSchema),
+  resetPassword
 );
 
 module.exports = authRoutes;
