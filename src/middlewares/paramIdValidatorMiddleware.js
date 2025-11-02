@@ -94,8 +94,8 @@ const validateParamId = (type) => async (req, _res, next) => {
         }
 
         if (
-          user.role.memberRole &&
-          user.role.memberRole !== "ORG_ADMIN" &&
+          req.user.memberRole &&
+          req.user.memberRole !== "ORG_ADMIN" &&
           req.params.id !== req.user.publicId
         ) {
           throw new ApiException(
