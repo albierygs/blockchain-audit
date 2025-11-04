@@ -104,6 +104,17 @@ enum BlockchainLogLevel {
   WARN
 }
 
+enum VolunteerLogStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum CertificateType {
+  CERTIFICATE
+  NFT
+}
+
 // ========================================
 // CORE MODELS
 // ========================================
@@ -135,12 +146,13 @@ model person {
 }
 
 model donor {
-  public_id     String       @id @unique
-  person        person       @relation(fields: [public_id], references: [public_id], onDelete: Cascade, onUpdate: Cascade)
-  document_type DocumentType
-  donations     donation[]
-  created_at    DateTime     @default(now())
-  updated_at    DateTime     @updatedAt()
+  public_id           String                @id @unique
+  person              person                @relation(fields: [public_id], references: [public_id], onDelete: Cascade, onUpdate: Cascade)
+  document_type       DocumentType
+  donations           donation[]
+  created_at          DateTime              @default(now())
+  updated_at          DateTime              @updatedAt()
+  digital_certificate digital_certificate[]
 }
 
 model organization_member {
@@ -154,9 +166,12 @@ model organization_member {
   created_at      DateTime         @default(now())
   updated_at      DateTime         @updatedAt()
 
-  status_history status_history[]
-  audit_logs     audit_log[]
-  memberships    organization_membership[] @relation("Member")
+  status_history          status_history[]
+  audit_logs              audit_log[]
+  memberships             organization_membership[] @relation("Member")
+  uploaded_attachments    attachment[] // NOVA RELAÇÃO INVERSA
+  volunteer_logs          volunteer_log[]           @relation("VolunteerLogs") // NOVA RELAÇÃO INVERSA
+  approved_volunteer_logs volunteer_log[]           @relation("ApprovedVolunteerLogs")
 
   @@index([member_code])
   @@index([organization_id])
@@ -181,11 +196,13 @@ model organization {
   updated_at  DateTime  @updatedAt()
   deleted_at  DateTime?
 
-  donations   donation[]
-  projects    project[]
-  members     organization_member[]
-  allocations allocation[]
-  memberships organization_membership[]
+  donations     donation[]
+  projects      project[]
+  members       organization_member[]
+  allocations   allocation[]
+  memberships   organization_membership[]
+  suppliers     supplier[]
+  beneficiaries beneficiary[]
 
   @@index([email])
   @@index([cnpj])
@@ -223,6 +240,43 @@ model organization_membership {
   @@index([member_id, organization_id])
 }
 
+model supplier {
+  id              Int       @id @default(autoincrement())
+  public_id       String    @unique @default(uuid())
+  organization_id String
+  name            String
+  document        String    @unique
+  contact_email   String?
+  contact_phone   String?
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  deleted_at      DateTime?
+
+  organization organization @relation(fields: [organization_id], references: [public_id])
+  expenses     expense[]
+
+  @@index([organization_id])
+}
+
+model beneficiary {
+  id              Int       @id @default(autoincrement())
+  public_id       String    @unique @default(uuid())
+  organization_id String
+  name            String
+  document        String?
+  address         String?
+  contact_info    String?
+  status          Status    @default(ACTIVE)
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  deleted_at      DateTime?
+
+  organization organization @relation(fields: [organization_id], references: [public_id])
+  deliveries   delivery[]
+
+  @@index([organization_id])
+}
+
 // ========================================
 // FINANCIAL MODELS
 // ========================================
@@ -247,8 +301,9 @@ model donation {
   allocations            allocation[]
   blockchain_transaction blockchain_transaction?
 
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt()
+  created_at          DateTime             @default(now())
+  updated_at          DateTime             @updatedAt()
+  digital_certificate digital_certificate?
 
   @@index([donor_id])
   @@index([organization_id])
@@ -274,8 +329,10 @@ model project {
   updated_at DateTime  @updatedAt()
   deleted_at DateTime?
 
-  allocations allocation[]
-  expenses    expense[]
+  allocations    allocation[]
+  expenses       expense[]
+  volunteer_logs volunteer_log[]
+  deliveries     delivery[]
 
   @@index([organization_id])
   @@index([status])
@@ -323,9 +380,55 @@ model expense {
   updated_at DateTime  @updatedAt()
   deleted_at DateTime?
 
+  supplier    supplier?  @relation(fields: [supplier_id], references: [public_id])
+  supplier_id String?
+  deliveries  delivery[]
+
   @@index([project_id])
   @@index([status])
   @@index([category])
+}
+
+model volunteer_log {
+  id             Int                @id @default(autoincrement())
+  public_id      String             @unique @default(uuid())
+  volunteer_id   String // FK para organization_member
+  project_id     String?
+  date           DateTime
+  hours_worked   Decimal            @db.Decimal(5, 2)
+  description    String?
+  status         VolunteerLogStatus @default(PENDING)
+  approved_by_id String?
+  created_at     DateTime           @default(now())
+
+  volunteer   organization_member  @relation("VolunteerLogs", fields: [volunteer_id], references: [public_id])
+  project     project?             @relation(fields: [project_id], references: [public_id])
+  approved_by organization_member? @relation("ApprovedVolunteerLogs", fields: [approved_by_id], references: [public_id])
+
+  @@index([volunteer_id])
+  @@index([project_id])
+  @@index([approved_by_id])
+}
+
+model delivery {
+  id               Int      @id @default(autoincrement())
+  public_id        String   @unique @default(uuid())
+  project_id       String
+  beneficiary_id   String
+  expense_id       String? // Custo associado (ex: cesta básica)
+  item_description String
+  quantity         Int
+  delivery_date    DateTime
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  project     project     @relation(fields: [project_id], references: [public_id])
+  beneficiary beneficiary @relation(fields: [beneficiary_id], references: [public_id])
+  expense     expense?    @relation(fields: [expense_id], references: [public_id])
+
+  @@index([project_id])
+  @@index([beneficiary_id])
+  @@index([expense_id])
 }
 
 // ========================================
@@ -423,7 +526,7 @@ model status_history {
 }
 
 // ========================================
-// SESSION MODEL
+// SESSION & UTILITY MODELS
 // ========================================
 
 model session {
@@ -457,4 +560,37 @@ model password_reset_token {
 
   @@index([user_id])
   @@index([expires_at])
+}
+
+model attachment {
+  id             Int      @id @default(autoincrement())
+  public_id      String   @unique @default(uuid())
+  entity_type    String // EXPENSE, PROJECT, etc.
+  entity_id      String
+  file_name      String
+  file_url       String
+  uploaded_by_id String?
+  created_at     DateTime @default(now())
+
+  uploaded_by organization_member? @relation(fields: [uploaded_by_id], references: [public_id])
+
+  @@index([entity_id, entity_type])
+  @@index([uploaded_by_id])
+}
+
+model digital_certificate {
+  id           Int             @id @default(autoincrement())
+  public_id    String          @unique @default(uuid())
+  donation_id  String          @unique // Um certificado por doação
+  donor_id     String
+  type         CertificateType
+  mint_hash    String? // Hash da transação do NFT
+  token_id     String?
+  metadata_url String
+  issued_at    DateTime        @default(now())
+
+  donation donation @relation(fields: [donation_id], references: [public_id])
+  donor    donor    @relation(fields: [donor_id], references: [public_id])
+
+  @@index([donor_id])
 }
