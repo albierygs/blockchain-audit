@@ -48,6 +48,9 @@ const updateDonor = async (req, res) => {
       document: true,
       phone: true,
       updated_at: true,
+      city: true,
+      state: true,
+      birth_date: true,
       donor: {
         select: {
           document_type: true,

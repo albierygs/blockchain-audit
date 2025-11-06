@@ -25,6 +25,40 @@ const createDonorSchema = z
       },
       { error: "invalid document" }
     ),
+    city: z.string("city required").min(2, "city required"),
+    state: z.enum(
+      [
+        "AC",
+        "AL",
+        "AP",
+        "AM",
+        "BA",
+        "CE",
+        "DF",
+        "ES",
+        "GO",
+        "MA",
+        "MT",
+        "MS",
+        "MG",
+        "PA",
+        "PB",
+        "PR",
+        "PE",
+        "PI",
+        "RJ",
+        "RN",
+        "RS",
+        "RO",
+        "RR",
+        "SC",
+        "SP",
+        "SE",
+        "TO",
+      ],
+      { error: "invalide state" }
+    ),
+    birthDate: z.iso.date("invalid birthDate format (YYYY-MM-DD)"),
   })
   .strict();
 

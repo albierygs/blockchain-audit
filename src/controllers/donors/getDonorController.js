@@ -17,6 +17,9 @@ const getDonor = async (req, res) => {
       created_at: true,
       updated_at: true,
       status: true,
+      city: true,
+      state: true,
+      birth_date: true,
       donor: {
         select: {
           document_type: true,

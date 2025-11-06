@@ -115,20 +115,55 @@ enum CertificateType {
   NFT
 }
 
+enum StateBR {
+  AC
+  AL
+  AP
+  AM
+  BA
+  CE
+  DF
+  ES
+  GO
+  MA
+  MT
+  MS
+  MG
+  PA
+  PB
+  PR
+  PE
+  PI
+  RJ
+  RN
+  RS
+  RO
+  RR
+  SC
+  SP
+  SE
+  TO
+}
+
 // ========================================
 // CORE MODELS
 // ========================================
 
 model person {
-  id                  Int                  @id @default(autoincrement())
-  public_id           String               @unique @default(uuid())
-  name                String
-  email               String               @unique
-  password            String
-  phone               String
-  document            String               @unique
-  status              Status               @default(ACTIVE)
-  role                PersonRole
+  id        Int        @id @default(autoincrement())
+  public_id String     @unique @default(uuid())
+  name      String
+  email     String     @unique
+  password  String
+  phone     String
+  document  String     @unique
+  status    Status     @default(ACTIVE)
+  role      PersonRole
+
+  city       String
+  state      StateBR
+  birth_date DateTime @db.Date
+
   created_at          DateTime             @default(now())
   updated_at          DateTime             @updatedAt()
   deleted_at          DateTime?

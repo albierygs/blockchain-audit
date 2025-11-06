@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE `person` ALTER COLUMN `birth_date` DROP DEFAULT,
+    ALTER COLUMN `city` DROP DEFAULT,
+    ALTER COLUMN `state` DROP DEFAULT;

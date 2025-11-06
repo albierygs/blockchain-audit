@@ -17,6 +17,9 @@ const getMember = async (req, res) => {
       created_at: true,
       updated_at: true,
       status: true,
+      city: true,
+      state: true,
+      birth_date: true,
       organization_member: {
         select: {
           member_code: true,

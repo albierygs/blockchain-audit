@@ -6,7 +6,17 @@ const generateMemberCode = require("../../helpers/createMemberCode");
 const { sendMemberHiredEmail } = require("../../utils/emailService");
 
 const hireMember = async (req, res) => {
-  const { name, email, phone, document, role, organizationId } = req.body;
+  const {
+    name,
+    email,
+    phone,
+    document,
+    role,
+    organizationId,
+    city,
+    state,
+    birthDate,
+  } = req.body;
 
   const org = await db.organization.findUnique({
     where: {
@@ -61,6 +71,9 @@ const hireMember = async (req, res) => {
           name,
           password: passwordHash,
           phone,
+          city,
+          state,
+          birth_date: birthDate,
           role: "ORG_MEMBER",
         },
         omit: {
