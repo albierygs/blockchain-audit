@@ -174,6 +174,7 @@ model person {
   hired_memberships      organization_membership[] @relation("HiredBy")
   terminated_memberships organization_membership[] @relation("TerminatedBy")
   password_reset_token   password_reset_token[]
+  status_histories       status_history[]
 
   @@index([email])
   @@index([document])
@@ -201,7 +202,6 @@ model organization_member {
   created_at      DateTime         @default(now())
   updated_at      DateTime         @updatedAt()
 
-  status_history          status_history[]
   audit_logs              audit_log[]
   memberships             organization_membership[] @relation("Member")
   uploaded_attachments    attachment[] // NOVA RELAÇÃO INVERSA
@@ -324,11 +324,12 @@ model donation {
   organization    organization   @relation(fields: [organization_id], references: [public_id])
   organization_id String
   value           Decimal        @db.Decimal(10, 2)
-  date            DateTime
+  date            DateTime       @default(now())
   payment_method  PaymentMethod
   status          DonationStatus @default(PENDING)
 
   confirmed_at        DateTime?
+  confirmed_by        String?
   cancelled_at        DateTime?
   cancelled_by        String?
   cancellation_reason String?   @db.Text
@@ -385,8 +386,8 @@ model allocation {
   amount_allocated       Decimal                 @db.Decimal(18, 4)
   allocation_date        DateTime                @default(now())
   blockchain_transaction blockchain_transaction?
-  organization           organization?           @relation(fields: [organizationId], references: [public_id])
-  organizationId         String?
+  organization           organization            @relation(fields: [organizationId], references: [public_id])
+  organizationId         String
 
   @@index([donation_id])
   @@index([project_id])
@@ -429,7 +430,7 @@ model volunteer_log {
   public_id      String             @unique @default(uuid())
   volunteer_id   String // FK para organization_member
   project_id     String?
-  date           DateTime
+  date           DateTime           @default(now())
   hours_worked   Decimal            @db.Decimal(5, 2)
   description    String?
   status         VolunteerLogStatus @default(PENDING)
@@ -526,6 +527,7 @@ model blockchain_log {
 
 model audit_log {
   id          Int                  @id @default(autoincrement())
+  public_id   String               @unique @default(uuid())
   member      organization_member? @relation(fields: [member_id], references: [public_id])
   member_id   String?
   action      String
@@ -544,16 +546,17 @@ model audit_log {
 }
 
 model status_history {
-  id                  Int                  @id @default(autoincrement())
-  entity_type         String
-  entity_id           String
-  old_status          String?
-  new_status          String
-  reason              String?              @db.Text
-  changed_by_id       String?
-  organization_member organization_member? @relation(fields: [changed_by_id], references: [public_id])
-  changed_at          DateTime             @default(now())
-  metadata            Json?
+  id            Int      @id @default(autoincrement())
+  public_id     String   @unique @default(uuid())
+  entity_type   String
+  entity_id     String
+  old_status    String?
+  new_status    String
+  reason        String?  @db.Text
+  changed_by_id String
+  chaged_by     person   @relation(fields: [changed_by_id], references: [public_id])
+  changed_at    DateTime @default(now())
+  metadata      Json?
 
   @@index([entity_type, entity_id])
   @@index([changed_at])
