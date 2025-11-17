@@ -19,7 +19,7 @@ const {
   updateOrganizationSchema,
 } = require("../schemas/organizations");
 
-const organizationRoutes = Router();
+const organizationRoutes = Router({ mergeParams: true });
 
 organizationRoutes.get(
   "/",

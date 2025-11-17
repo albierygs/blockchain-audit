@@ -1,5 +1,6 @@
 const { db } = require("../../utils/db");
 const ApiException = require("../../exceptions/apiException");
+const StatusHistoryService = require("../../services/statusHistoryService");
 const { default: Decimal } = require("decimal.js");
 
 const createExpense = async (req, res) => {
@@ -80,6 +81,26 @@ const createExpense = async (req, res) => {
 
     return expense;
   });
+
+  // Registrar automaticamente no status_history (fora da transação)
+  try {
+    await StatusHistoryService.recordStatusChange(
+      "EXPENSE",
+      result.public_id,
+      null,
+      "PENDING",
+      req.user.publicId,
+      "Despesa criada",
+      {
+        name,
+        value,
+        category,
+        project_id: projectId,
+      }
+    );
+  } catch (statusError) {
+    console.error("Erro ao registrar status history:", statusError);
+  }
 
   res.status(201).json(result);
 };

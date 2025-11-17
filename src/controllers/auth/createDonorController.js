@@ -2,10 +2,8 @@ const { db } = require("../../utils/db");
 const ApiException = require("../../exceptions/apiException");
 const bcrypt = require("bcryptjs");
 const { SALT_BCRYPT } = require("../../utils/constants");
-const {
-  sendEmail,
-  sendWelcomeDonorEmail,
-} = require("../../utils/emailService");
+const { sendWelcomeDonorEmail } = require("../../utils/emailService");
+const StatusHistoryService = require("../../services/statusHistoryService");
 
 const createDonor = async (req, res) => {
   const { name, email, phone, document, password, city, state, birthDate } =
@@ -58,6 +56,26 @@ const createDonor = async (req, res) => {
       },
     },
   });
+
+  try {
+    await StatusHistoryService.recordStatusChange(
+      "PERSON",
+      personCreated.public_id,
+      null,
+      "ACTIVE",
+      personCreated.public_id, // O próprio doador (user_id é o changed_by)
+      "Conta de doador criada e ativada",
+      {
+        role: "DONOR",
+        document_type: personCreated.donor.document_type,
+      }
+    );
+  } catch (statusError) {
+    console.error(
+      "Erro ao registrar status history na criação de doador:",
+      statusError
+    );
+  }
 
   await sendWelcomeDonorEmail(personCreated.name, personCreated.email);
 

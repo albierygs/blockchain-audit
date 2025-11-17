@@ -15,8 +15,9 @@ const {
   terminateMember,
   getMemberHistory,
 } = require("../controllers/members");
+const statusHistoryRoutes = require("./statusHistoryRoutes");
 
-const memberRoutes = Router();
+const memberRoutes = Router({ mergeParams: true });
 
 memberRoutes.post(
   "/hire",
@@ -55,6 +56,17 @@ memberRoutes.put(
   validateParamId("ORG_PEER_ACTION"),
   validateReqBody(terminateMemberSchema),
   terminateMember
+);
+
+// Rotas de histórico de status para membros
+memberRoutes.use(
+  "/:id/status-history",
+  (req, res, next) => {
+    res.locals.entityId = req.params.id;
+    res.locals.entityType = "MEMBER";
+    next();
+  },
+  statusHistoryRoutes
 );
 
 module.exports = memberRoutes;

@@ -16,6 +16,7 @@ const {
   deleteProject,
   listProjects,
 } = require("../controllers/projects");
+const statusHistoryRoutes = require("./statusHistoryRoutes");
 
 const projectsRoutes = Router({ mergeParams: true }); // Habilita o merge de params
 
@@ -40,8 +41,19 @@ projectsRoutes.get(
   listProjects
 );
 
+// Rotas de histórico de status para projetos
+projectsRoutes.use(
+  "/:projectId/status-history",
+  (req, res, next) => {
+    res.locals.entityId = req.params.projectId;
+    res.locals.entityType = "PROJECT";
+    next();
+  },
+  statusHistoryRoutes
+);
+
 // Rotas diretas (/projects/:id) - Requer um roteador separado
-const singleProjectRoutes = Router();
+const singleProjectRoutes = Router({ mergeParams: true });
 
 // OBTER um projeto específico
 singleProjectRoutes.get(
@@ -69,6 +81,17 @@ singleProjectRoutes.delete(
   authorizeRoles(["ADMIN", "ORG_MEMBER"], ["ORG_ADMIN"]),
   validateParamId("ORG_PROJECT_ACTION"),
   deleteProject
+);
+
+// Rotas de histórico de status para projetos individuais
+singleProjectRoutes.use(
+  "/:id/status-history",
+  (req, res, next) => {
+    res.locals.entityId = req.params.id;
+    res.locals.entityType = "PROJECT";
+    next();
+  },
+  statusHistoryRoutes
 );
 
 module.exports = { projectsRoutes, singleProjectRoutes };

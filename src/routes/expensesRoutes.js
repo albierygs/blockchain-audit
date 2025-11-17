@@ -17,6 +17,7 @@ const {
   deleteExpense,
   approveExpense,
 } = require("../controllers/expenses");
+const statusHistoryRoutes = require("./statusHistoryRoutes");
 
 // Roteador aninhado sob projetos (/projects/:id/expenses)
 const projectExpensesRoutes = Router({ mergeParams: true });
@@ -41,6 +42,17 @@ projectExpensesRoutes.get(
   ),
   validateParamId("ORG_PROJECT_ACTION"), // :id é o project_id
   listExpenses
+);
+
+// Rotas de histórico de status para despesas
+projectExpensesRoutes.use(
+  "/:expenseId/status-history",
+  (req, res, next) => {
+    res.locals.entityId = req.params.expenseId;
+    res.locals.entityType = "EXPENSE";
+    next();
+  },
+  statusHistoryRoutes
 );
 
 // Roteador para despesas individuais (/expenses/:id)
@@ -81,6 +93,17 @@ singleExpenseRoutes.delete(
   authorizeRoles(["ADMIN", "ORG_MEMBER"], ["ORG_ADMIN"]),
   validateParamId("ORG_EXPENSE_ACTION"),
   deleteExpense
+);
+
+// Rotas de histórico de status para despesas individuais
+singleExpenseRoutes.use(
+  "/:id/status-history",
+  (req, res, next) => {
+    res.locals.entityId = req.params.id;
+    res.locals.entityType = "EXPENSE";
+    next();
+  },
+  statusHistoryRoutes
 );
 
 module.exports = { projectExpensesRoutes, singleExpenseRoutes };

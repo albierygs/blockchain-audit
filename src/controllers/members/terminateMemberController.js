@@ -1,11 +1,16 @@
 const { db } = require("../../utils/db");
 const { sendMemberTerminationEmail } = require("../../utils/emailService");
+const StatusHistoryService = require("../../services/statusHistoryService");
 
 const terminateMember = async (req, res) => {
   const { reason } = req.body;
+  const changedByPublicId = req.user.publicId;
+  const oldStatus = "ACTIVE";
+  const newStatus = "TERMINATED";
 
   let memberToTerminate;
   let organizationName;
+  let membershipPublicId;
 
   await db.$transaction(async (tx) => {
     const member = await tx.organization_member.findUnique({
@@ -28,6 +33,7 @@ const terminateMember = async (req, res) => {
       select: {
         id: true,
         member_id: true,
+        public_id: true,
         organization: { select: { name: true } },
       },
     });
@@ -37,6 +43,7 @@ const terminateMember = async (req, res) => {
     }
 
     organizationName = membership.organization.name;
+    membershipPublicId = membership.public_id;
 
     memberToTerminate = await tx.person.findUnique({
       where: { public_id: membership.member_id },
@@ -62,6 +69,27 @@ const terminateMember = async (req, res) => {
       },
     });
   });
+
+  // Registrar histórico de status da MEMBERSHIP
+  try {
+    await StatusHistoryService.recordStatusChange(
+      "MEMBERSHIP",
+      membershipPublicId, // ID da membership
+      oldStatus,
+      newStatus,
+      changedByPublicId,
+      `Membro desligado da organização ${organizationName}. Motivo: ${reason}`,
+      {
+        termination_reason: reason,
+        organization_name: organizationName,
+      }
+    );
+  } catch (statusError) {
+    console.error(
+      "Erro ao registrar status history em terminateMember:",
+      statusError
+    );
+  }
 
   if (memberToTerminate && organizationName) {
     await sendMemberTerminationEmail(

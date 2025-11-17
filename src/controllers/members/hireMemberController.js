@@ -4,6 +4,7 @@ const bcrypt = require("bcryptjs");
 const { SALT_BCRYPT } = require("../../utils/constants");
 const generateMemberCode = require("../../helpers/createMemberCode");
 const { sendMemberHiredEmail } = require("../../utils/emailService");
+const StatusHistoryService = require("../../services/statusHistoryService");
 
 const hireMember = async (req, res) => {
   const {
@@ -17,6 +18,10 @@ const hireMember = async (req, res) => {
     state,
     birthDate,
   } = req.body;
+
+  const changedByPublicId = req.user.publicId;
+  const initialPersonStatus = "ACTIVE";
+  const initialMembershipStatus = "ACTIVE";
 
   const org = await db.organization.findUnique({
     where: {
@@ -63,6 +68,8 @@ const hireMember = async (req, res) => {
   const passwordHash = await bcrypt.hash(tempPassword, SALT_BCRYPT);
 
   const result = await db.$transaction(async (tx) => {
+    let personStatusHistoryRecord = null;
+
     if (!person) {
       person = await tx.person.create({
         data: {
@@ -73,7 +80,7 @@ const hireMember = async (req, res) => {
           phone,
           city,
           state,
-          birth_date: birthDate,
+          birth_date: new Date(birthDate),
           role: "ORG_MEMBER",
         },
         omit: {
@@ -83,6 +90,16 @@ const hireMember = async (req, res) => {
           id: true,
         },
       });
+
+      // Registrar status history para a criação da PERSON
+      personStatusHistoryRecord = {
+        entityType: "PERSON",
+        entityId: person.public_id,
+        oldStatus: null,
+        newStatus: initialPersonStatus,
+        changedById: changedByPublicId,
+        reason: "Conta de membro criada e ativada",
+      };
     }
 
     let member = await tx.organization_member.findUnique({
@@ -149,15 +166,65 @@ const hireMember = async (req, res) => {
       },
     });
 
-    await sendMemberHiredEmail(
-      person.name,
-      person.email,
-      memberCode,
-      tempPassword
-    );
+    const membershipStatusHistoryRecord = {
+      entityType: "MEMBERSHIP",
+      entityId: membership.public_id,
+      oldStatus: null,
+      newStatus: initialMembershipStatus,
+      changedById: changedByPublicId,
+      reason: `Membro contratado para a organização ${organizationId} com função ${role}`,
+      metadata: {
+        member_id: person.public_id,
+        organization_id: organizationId,
+        role: role,
+      },
+    };
 
-    return { person, member, membership };
+    return {
+      person,
+      member,
+      membership,
+      personStatusHistoryRecord,
+      membershipStatusHistoryRecord,
+    };
   });
+
+  // Registrar histórico de status fora da transação
+  try {
+    if (result.personStatusHistoryRecord) {
+      await StatusHistoryService.recordStatusChange(
+        result.personStatusHistoryRecord.entityType,
+        result.personStatusHistoryRecord.entityId,
+        result.personStatusHistoryRecord.oldStatus,
+        result.personStatusHistoryRecord.newStatus,
+        result.personStatusHistoryRecord.changedById,
+        result.personStatusHistoryRecord.reason,
+        { role: "ORG_MEMBER" }
+      );
+    }
+
+    await StatusHistoryService.recordStatusChange(
+      result.membershipStatusHistoryRecord.entityType,
+      result.membershipStatusHistoryRecord.entityId,
+      result.membershipStatusHistoryRecord.oldStatus,
+      result.membershipStatusHistoryRecord.newStatus,
+      result.membershipStatusHistoryRecord.changedById,
+      result.membershipStatusHistoryRecord.reason,
+      result.membershipStatusHistoryRecord.metadata
+    );
+  } catch (statusError) {
+    console.error(
+      "Erro ao registrar status history em hireMember:",
+      statusError
+    );
+  }
+
+  await sendMemberHiredEmail(
+    person.name,
+    person.email,
+    memberCode,
+    tempPassword
+  );
 
   res.status(200).json(result);
 };

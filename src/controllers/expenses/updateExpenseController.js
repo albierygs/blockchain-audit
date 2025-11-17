@@ -1,10 +1,44 @@
 const { db } = require("../../utils/db");
 const ApiException = require("../../exceptions/apiException");
 const { default: Decimal } = require("decimal.js");
+const StatusHistoryService = require("../../services/statusHistoryService");
 
 const updateExpense = async (req, res) => {
   const { id } = req.params; // expense public_id
   const dataToUpdate = req.body;
+
+  // Buscar despesa original para obter o status e outros dados
+  const originalExpense = await db.expense.findUnique({
+    where: { public_id: id, deleted_at: null },
+    select: {
+      status: true,
+      project_id: true,
+      name: true,
+      value: true,
+      category: true,
+    },
+  });
+
+  if (!originalExpense) {
+    throw new ApiException("Expense not found", 404);
+  }
+
+  const oldStatus = originalExpense.status;
+  const newStatus = dataToUpdate.status;
+
+  if (
+    newStatus &&
+    !StatusHistoryService.isValidStatusTransition(
+      "EXPENSE",
+      oldStatus,
+      newStatus
+    )
+  ) {
+    throw new ApiException(
+      `Não é possível alterar de ${oldStatus} para ${newStatus}`,
+      400
+    );
+  }
 
   const result = await db.$transaction(async (tx) => {
     const expense = await tx.expense.findUnique({
@@ -81,6 +115,31 @@ const updateExpense = async (req, res) => {
 
     return updatedExpense;
   });
+
+  // Registrar histórico de status se o status foi alterado
+  if (newStatus) {
+    try {
+      await StatusHistoryService.recordStatusChange(
+        "EXPENSE",
+        id,
+        oldStatus,
+        newStatus,
+        req.user.publicId,
+        `Status da despesa alterado para ${newStatus}`,
+        {
+          name: result.name,
+          value: result.value,
+          category: result.category,
+          project_id: result.project_id,
+        }
+      );
+    } catch (statusError) {
+      console.error(
+        "Erro ao registrar status history em updateExpense:",
+        statusError
+      );
+    }
+  }
 
   res.status(200).json(result);
 };

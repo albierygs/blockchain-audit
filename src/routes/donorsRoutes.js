@@ -7,8 +7,9 @@ const {
   validateParamId,
 } = require("../middlewares");
 const { updateDonorSchema } = require("../schemas/donors");
+const statusHistoryRoutes = require("./statusHistoryRoutes");
 
-const donorsRoute = Router();
+const donorsRoute = Router({ mergeParams: true });
 
 donorsRoute.get(
   "/:id",
@@ -33,6 +34,17 @@ donorsRoute.delete(
   authorizeRoles(["DONOR", "ADMIN"]),
   validateParamId("SELF"),
   deleteDonor
+);
+
+// Rotas de histórico de status para doadores (entidade PERSON)
+donorsRoute.use(
+  "/:id/status-history",
+  (req, res, next) => {
+    res.locals.entityId = req.params.id;
+    res.locals.entityType = "PERSON";
+    next();
+  },
+  statusHistoryRoutes
 );
 
 module.exports = donorsRoute;
