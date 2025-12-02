@@ -19,7 +19,7 @@ const blockchainRoutes = Router();
 blockchainRoutes.get(
   "/",
   validateToken,
-  authorizeRoles(["ADMIN", "ORG_MEMBER"], ["ORG_ADMIN", "AUDITOR"]),
+  authorizeRoles(["ADMIN", "DONOR", "ORG_MEMBER"], ["ORG_ADMIN", "AUDITOR"]),
   listBlockchainTransactions
 );
 
