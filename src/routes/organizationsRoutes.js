@@ -7,6 +7,8 @@ const {
   updateOrganization,
   listVerifiedOrganizations,
   verifyOrganization,
+  listOrganizationMembers,
+  listOrganizationVolunteerLogs,
 } = require("../controllers/organizations");
 const {
   validateToken,
@@ -75,6 +77,22 @@ organizationRoutes.delete(
   authorizeRoles(["ADMIN", "ORG_MEMBER"], ["ORG_ADMIN"]),
   validateParamId("MEMBER_TO_ORGANIZATION"),
   deleteOrganization
+);
+
+// Rota para listar membros de uma organização específica
+organizationRoutes.get(
+  "/:organizationId/members",
+  validateToken,
+  authorizeRoles(["ADMIN", "ORG_MEMBER"], ["ORG_ADMIN", "AUDITOR"]),
+  listOrganizationMembers
+);
+
+// Rota para listar volunteer logs de uma organização específica
+organizationRoutes.get(
+  "/:organizationId/volunteer-logs",
+  validateToken,
+  authorizeRoles(["ADMIN", "ORG_MEMBER"], ["ORG_ADMIN", "AUDITOR"]),
+  listOrganizationVolunteerLogs
 );
 
 module.exports = organizationRoutes;

@@ -91,11 +91,20 @@ const sendMemberTerminationEmail = async (
   return sendEmail({ to: email, subject, html });
 };
 
-const sendOrganizationVerifiedEmail = async (organizationName, email) => {
-  const subject = "Sua Organização foi Verificada!";
+const sendOrganizationVerifiedEmail = async (
+  organizationName,
+  email,
+  memberCode
+) => {
+  const subject = "Sua Organização foi Aprovada!";
   const html = `
         <p>Parabéns, <strong>${organizationName}</strong>!</p>
-        <p>Sua organização foi oficialmente verificada em nossa plataforma. A partir de agora, o selo de verificação será exibido em seu perfil, aumentando a confiança e transparência junto aos doadores.</p>
+        <p>Sua organização foi oficialmente aprovada em nossa plataforma. A partir de agora, o administrador já pode acessar a organização, aumentando a confiança e transparência junto aos doadores.</p>
+        <p>Credenciais de acesso:</p>
+        <ul>
+          <li>Código de membro: ${memberCode}</li>
+          <li>Senha: Definida no momento do cadastro.</li>
+        </ul>
         <p>Obrigado por fazer parte da nossa missão!</p>
         <br>
         <p>Atenciosamente,<br>A Equipe Blockchain Audit.</p>

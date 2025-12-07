@@ -1,4 +1,5 @@
 const { z } = require("zod");
+const hireMemberSchema = require("../members/hireMemberSchema");
 
 const createOrganizationSchema = z
   .object({
@@ -22,10 +23,6 @@ const createOrganizationSchema = z
       }),
     website: z.url("invalid website").optional(),
     email: z.email("invalid email").transform((value) => value.toLowerCase()),
-    password: z
-      .string("invalid password")
-      .min(6, "password min length is 6")
-      .max(14, "password max length is 14"),
     phone: z
       .string("invalid phone")
       .refine(
@@ -40,6 +37,17 @@ const createOrganizationSchema = z
         (value) => value.replace(/\s+/g, "").replace(/\D/g, "").length === 14,
         { error: "invalid cnpj" }
       ),
+    admin: hireMemberSchema
+      .omit({
+        role: true,
+        organizationId: true,
+      })
+      .extend({
+        password: z
+          .string("password required")
+          .min(6, "password min length is 6")
+          .max(14, "password max length is 14"),
+      }),
   })
   .strict();
 

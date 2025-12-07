@@ -5,6 +5,7 @@ const { SALT_BCRYPT } = require("../../utils/constants");
 const generateMemberCode = require("../../helpers/createMemberCode");
 const { sendMemberHiredEmail } = require("../../utils/emailService");
 const StatusHistoryService = require("../../services/statusHistoryService");
+const { createAuditLog } = require("../../services/auditLogService");
 
 const hireMember = async (req, res) => {
   const {
@@ -219,10 +220,24 @@ const hireMember = async (req, res) => {
     );
   }
 
+  await createAuditLog({
+    action: "HIRE_MEMBER",
+    entityType: "ORGANIZATION_MEMBER",
+    entityId: result.member.public_id,
+    memberId: req.user.publicId,
+    description: `Hired member ${result.person.name} (${result.person.email})`,
+    metadata: {
+      organizationId,
+      role,
+      memberCode: result.member.member_code,
+    },
+    req,
+  });
+
   await sendMemberHiredEmail(
     person.name,
     person.email,
-    memberCode,
+    result.member.member_code,
     tempPassword
   );
 

@@ -61,7 +61,7 @@ const terminateMember = async (req, res) => {
     });
 
     await tx.organization_member.update({
-      where: { public_id: member.public_id },
+      where: { public_id: req.params.id },
       data: {
         organization_id: null,
         role: null,

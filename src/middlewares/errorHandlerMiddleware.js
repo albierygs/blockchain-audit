@@ -19,6 +19,7 @@ const errorHandler = (error, req, res, _next) => {
       ip: req.ip,
     });
   } else if (error instanceof Error) {
+    console.error(error);
     res.status(500).json({
       error: "Internal server error",
       message: error.message,

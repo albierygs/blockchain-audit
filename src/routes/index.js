@@ -10,10 +10,14 @@ const {
   projectExpensesRoutes,
   singleExpenseRoutes,
 } = require("./expensesRoutes");
-const volunteerLogsRoutes = require("./volunteerLogsRoutes");
+const {
+  volunteerLogsRoutes,
+  globalVolunteerLogsRoutes,
+} = require("./volunteerLogsRoutes");
 const donationsRoutes = require("./donationsRoutes");
 const blockchainRoutes = require("./blockchainRoutes");
 const allocationsRoutes = require("./allocationsRoutes");
+const auditLogsRoutes = require("./auditLogsRoutes");
 const { listAllStatusHistory } = require("../controllers/statusHistory");
 
 const routes = Router({ mergeParams: true });
@@ -29,8 +33,10 @@ routes.use("/projects", singleProjectRoutes);
 routes.use("/projects/:id/expenses", projectExpensesRoutes);
 routes.use("/expenses", singleExpenseRoutes);
 routes.use("/members/:memberId/volunteer-logs", volunteerLogsRoutes);
+routes.use("/volunteer-logs", globalVolunteerLogsRoutes);
 routes.get("/status-history", validateToken, listAllStatusHistory);
 routes.use("/donations", donationsRoutes);
 routes.use("/blockchain", blockchainRoutes);
+routes.use("/audit-logs", auditLogsRoutes);
 
 module.exports = routes;

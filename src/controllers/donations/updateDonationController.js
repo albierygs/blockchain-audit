@@ -1,6 +1,7 @@
 const { db } = require("../../utils/db");
 const ApiException = require("../../exceptions/apiException");
 const StatusHistoryService = require("../../services/statusHistoryService");
+const { createAuditLog } = require("../../services/auditLogService");
 
 const updateDonation = async (req, res) => {
   const { donationId } = req.params;
@@ -84,6 +85,20 @@ const updateDonation = async (req, res) => {
         cancellation_reason: updateData.cancellation_reason,
       }
     );
+
+    await createAuditLog({
+      action: "UPDATE_DONATION_STATUS",
+      entityType: "DONATION",
+      entityId: donationId,
+      memberId: req.user.publicId,
+      description: `Status changed from ${donation.status} to ${status}`,
+      metadata: {
+        oldStatus: donation.status,
+        newStatus: status,
+        cancellationReason: cancellation_reason,
+      },
+      req,
+    });
   }
 
   res.status(200).json(updatedDonation);

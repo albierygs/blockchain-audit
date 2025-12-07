@@ -88,6 +88,7 @@ const loginPerson = async (req, res) => {
 
   res.status(200).json({
     token,
+    type: person.role,
     created_at: new Date().toLocaleString(),
     duration: JWT_EXPIRATION_TIME + JWT_EXPIRATION_UNIT,
   });

@@ -10,11 +10,20 @@ const {
   createVolunteerLog,
   approveVolunteerLog,
   rejectVolunteerLog,
+  listAllVolunteerLogs,
 } = require("../controllers/volunteerLogs");
 const { createVolunteerLogSchema } = require("../schemas/volunteerLogs");
 const statusHistoryRoutes = require("./statusHistoryRoutes");
 
 const volunteerLogsRoutes = Router({ mergeParams: true });
+const globalVolunteerLogsRoutes = Router({ mergeParams: true });
+
+globalVolunteerLogsRoutes.get(
+  "/all",
+  validateToken,
+  authorizeRoles(["ADMIN", "ORG_MEMBER"], ["ORG_ADMIN", "AUDITOR"]),
+  listAllVolunteerLogs
+);
 
 // Rota para listar logs de um membro específico
 volunteerLogsRoutes.get(
@@ -74,4 +83,4 @@ volunteerLogsRoutes.use(
   statusHistoryRoutes
 );
 
-module.exports = volunteerLogsRoutes;
+module.exports = { volunteerLogsRoutes, globalVolunteerLogsRoutes };
