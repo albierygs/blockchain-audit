@@ -31,7 +31,7 @@ const createDonor = async (req, res) => {
       role: "DONOR",
       city,
       state,
-      birth_date: birthDate,
+      birth_date: new Date(birthDate),
       donor: {
         create: {
           document_type: document.length === 11 ? "CPF" : "CNPJ",

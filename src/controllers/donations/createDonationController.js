@@ -35,7 +35,7 @@ const createDonation = async (req, res) => {
       organization_id,
       value: parseFloat(value),
       payment_method,
-      status: "PENDING",
+      status: "CONFIRMED",
     },
     include: {
       donor: {

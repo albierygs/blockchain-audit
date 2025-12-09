@@ -29,7 +29,7 @@ const createAdmin = async (req, res) => {
       role: "ADMIN",
       city,
       state,
-      birth_date: birthDate,
+      birth_date: new Date(birthDate),
     },
     select: {
       public_id: true,
