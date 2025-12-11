@@ -24,6 +24,9 @@ const seedAdmin = async () => {
         status: "ACTIVE",
         document: "00000000000",
         phone: "00000000000",
+        birth_date: new Date("1970-01-01"),
+        city: "Admin City",
+        state: "BA",
       },
     });
     console.info("Admin user seeded");
