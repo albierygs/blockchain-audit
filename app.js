@@ -2,15 +2,28 @@ const express = require("express");
 const cors = require("cors");
 const routes = require("./src/routes");
 const { errorHandler, unknownEndpoint } = require("./src/middlewares");
-const { FRONTEND_URL } = require("./src/utils/constants");
 
 const app = express();
 
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  process.env.FRONTEND_URL_DEV,
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: FRONTEND_URL,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`Origem não permitida pelo CORS: ${origin}`));
+      }
+    },
+    credentials: true,
   }),
 );
+
 app.use(express.json());
 
 app.use("/api", routes);

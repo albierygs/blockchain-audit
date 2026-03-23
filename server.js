@@ -3,7 +3,13 @@ const app = require("./app");
 const seedAdmin = require("./src/helpers/seedAdmin");
 const { PORT } = require("./src/utils/constants");
 
-app.listen(PORT, async () => {
-  await seedAdmin();
-  console.log(`server running on http://localhost:${PORT}/api`);
-});
+if (process.env.NODE_ENV !== "production") {
+  app.listen(PORT, async () => {
+    await seedAdmin();
+    console.log(`server running on http://localhost:${PORT}/api`);
+  });
+} else {
+  seedAdmin().catch(console.error);
+}
+
+module.exports = app;
